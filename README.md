@@ -1,5 +1,5 @@
-# Working Repo für WMC im 6. Semester
+# Working Repo für pos im 6. Semester
 
-Name: Vorname Zuname  
+Name: Aleksandar Stanisic  
 Klasse: 6CAIF
 
