@@ -1,0 +1,70 @@
+= API Endpunkt für Payments
+:source-highlighter: rouge
+
+Es sollen 3 Endpunkte für die Abfrage von Payments zur Verfügung gestellt werden:
+
+
+== GET /api/payments
+
+Gibt eine Liste aller Payments zurück.
+Die Daten sind im JSON Format mit HTTP 200 zu liefern.
+Beispielaufbau:
+
+[source,json]
+----
+[
+    {
+        "id": number
+        "employeeFirstName": string,
+        "employeeLastName": string,
+        "cashDeskNumber": number,
+        "paymentType": string,
+        "totalAmount": number
+    },
+    ....
+]
+----
+
+* Erstelle eine Klasse  _PaymentDto_, die die oben beschriebenen Properties abbildet.
+* Erstelle einen Controller _PaymentsController_ mit dem entsprechenden Endpunkt.
+
+== GET /api/payments/{id}
+
+Gibt ein Payment mit der angegebenen ID (ID des Payments) zurück.
+Die Daten sind im JSON Format mit HTTP 200 zu liefern.
+Beispielaufbau:
+
+[source,json]
+----
+[
+    {
+        "id": number
+        "employeeFirstName": string,
+        "employeeLastName": string,
+        "cashDeskNumber": number,
+        "paymentType": string,
+        "paymentItems": [
+            {
+                "articleName": string,
+                "amount": number,
+                "price": number"
+            }
+            ...
+        ]
+    },
+    ....
+]
+----
+
+* Erstelle eine Klasse  _PaymentDetailDto_, die die oben beschriebenen Properties abbildet.
+* Erstelle eine Klasse  _PaymentItemDto_, die die oben beschriebenen Properties des payment items abbildet.
+* Hinweis: Die Klasse _PaymentDetailDto_ enthält eine Liste von _PaymentItemDto_ Objekten.
+* Füge zum Controller _PaymentsController_ den entsprechenden Endpunkt hinzu.
+
+== GET /api/payments?cashDesk=number&dateFrom=YYYY-MM-DD
+
+Ändere den Endpunkt für _GET /api/payments_ so, dass der Query Parameter _cashDesk_ sowie _dateFrom_ verwendet werden kann.
+Wenn die beiden Parameter angegeben wurden, soll die Liste aller Payments für den angegebenen Kassenplatz und ab dem angegebenen Datum zurückgegeben werden.
+Wird kein Parameter angegeben, soll die Liste aller Payments zurückgegeben werden.
+Wird nur der Parameter _cashDesk_ angegeben, soll die Liste aller Payments für den angegebenen Kassenplatz zurückgegeben werden.
+Wird nur der Parameter _dateFrom_ angegeben, soll die Liste aller Payments ab dem angegebenen Datum zurückgegeben werden.
