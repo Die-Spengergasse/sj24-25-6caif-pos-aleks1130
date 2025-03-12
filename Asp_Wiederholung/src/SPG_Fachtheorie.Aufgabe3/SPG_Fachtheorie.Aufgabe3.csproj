@@ -15,4 +15,8 @@
     <ProjectReference Include="..\SPG_Fachtheorie.Aufgabe1\SPG_Fachtheorie.Aufgabe1.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Command\" />
+  </ItemGroup>
+
 </Project>
