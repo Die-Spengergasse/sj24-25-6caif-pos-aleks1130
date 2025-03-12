@@ -1,74 +1,75 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SPG_Fachtheorie.Aufgabe1.Model;
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
-namespace SPG_Fachtheorie.Aufgabe1.Controllers
+[ApiController]
+[Route("api/[controller]")]
+public class PaymentsController : ControllerBase
 {
-    [ApiController]
-    [Route("api/payments")]
-    public class PaymentsController : ControllerBase
+    private readonly ApplicationDbContext _context;
+
+    public PaymentsController(ApplicationDbContext context)
     {
-        private readonly PaymentContext _context;
-
-        public PaymentsController(PaymentContext context)
-        {
-            _context = context;
-        }
-
-        [HttpGet]
-        public ActionResult<IEnumerable<PaymentDto>> GetPayments([FromQuery] int? cashDesk, [FromQuery] DateTime? dateFrom)
-        {
-            var paymentsQuery = _context.Payments.AsQueryable();
-
-            if (cashDesk.HasValue)
-            {
-                paymentsQuery = paymentsQuery.Where(p => p.CashDesk.Number == cashDesk.Value);
-            }
-
-            if (dateFrom.HasValue)
-            {
-                paymentsQuery = paymentsQuery.Where(p => p.PaymentDateTime >= dateFrom.Value);
-            }
-
-            var payments = paymentsQuery.Select(p => new PaymentDto
-            {
-                Id = p.Id,
-                EmployeeFirstName = p.Employee.FirstName,
-                EmployeeLastName = p.Employee.LastName,
-                CashDeskNumber = p.CashDesk.Number,
-                PaymentType = p.PaymentType.ToString(),
-                TotalAmount = p.PaymentItems.Sum(i => i.Amount * i.Price)
-            }).ToList();
-
-            return Ok(payments);
-        }
-
-        [HttpGet("{id}")]
-        public ActionResult<PaymentDetailDto> GetPaymentById(int id)
-        {
-            var payment = _context.Payments
-                .Where(p => p.Id == id)
-                .Select(p => new PaymentDetailDto
-                {
-                    Id = p.Id,
-                    EmployeeFirstName = p.Employee.FirstName,
-                    EmployeeLastName = p.Employee.LastName,
-                    CashDeskNumber = p.CashDesk.Number,
-                    PaymentType = p.PaymentType.ToString(),
-                    PaymentItems = p.PaymentItems.Select(i => new PaymentItemDto
-                    {
-                        ArticleName = i.ArticleName,
-                        Amount = i.Amount,
-                        Price = i.Price
-                    }).ToList()
-                }).FirstOrDefault();
-
-            if (payment == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(payment);
-        }
+        _context = context;
     }
+
+    [HttpPost]
+    public async Task<IActionResult> CreatePayment([FromBody] NewPaymentCommand command)
+    {
+        if (command.PaymentDateTime > DateTime.UtcNow.AddMinutes(1))
+        {
+            return BadRequest(new ProblemDetails { Title = "Invalid payment date", Detail = "Payment date cannot be more than 1 minute in the future." });
+        }
+
+        var cashDesk = _context.CashDesks.FirstOrDefault(cd => cd.Number == command.CashDeskNumber);
+        if (cashDesk == null)
+        {
+            return BadRequest(new ProblemDetails { Title = "Invalid cash desk", Detail = "Cash desk not found." });
+        }
+
+        var employee = _context.Employees.FirstOrDefault(e => e.RegistrationNumber == command.EmployeeRegistrationNumber);
+        if (employee == null)
+        {
+            return BadRequest(new ProblemDetails { Title = "Invalid employee", Detail = "Employee not found." });
+        }
+
+        if (!Enum.TryParse<PaymentType>(command.PaymentType, out var paymentType))
+        {
+            return BadRequest(new ProblemDetails { Title = "Invalid payment type", Detail = "Payment type not recognized." });
+        }
+
+        var payment = new Payment
+        {
+            CashDeskId = cashDesk.Id,
+            EmployeeId = employee.Id,
+            PaymentDateTime = command.PaymentDateTime,
+            PaymentType = paymentType
+        };
+
+        try
+        {
+            _context.Payments.Add(payment);
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ProblemDetails { Title = "Database error", Detail = ex.Message });
+        }
+
+        return CreatedAtAction(nameof(GetPaymentById), new { id = payment.Id }, payment.Id);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetPaymentById(int id)
+    {
+        var payment = await _context.Payments.FindAsync(id);
+        if (payment == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(payment);
+    }
+}
