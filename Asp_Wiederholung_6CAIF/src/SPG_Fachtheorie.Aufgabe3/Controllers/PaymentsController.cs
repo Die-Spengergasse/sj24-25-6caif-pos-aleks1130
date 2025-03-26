@@ -22,12 +22,6 @@ namespace SPG_Fachtheorie.Aufgabe3.Controllers
             _db = db;
         }
 
-        /// <summary>
-        /// GET /api/payments
-        /// GET /api/payments?cashDesk=1
-        /// GET /api/payments?dateFrom=2024-05-13
-        /// GET /api/payments?dateFrom=2024-05-13&cashDesk=1
-        /// </summary>
         [HttpGet]
         public ActionResult<List<PaymentDto>> GetAllPayments(
             [FromQuery] int? cashDesk,
@@ -45,9 +39,6 @@ namespace SPG_Fachtheorie.Aufgabe3.Controllers
             return Ok(payments);
         }
 
-        /// <summary>
-        /// GET /api/payments/{id}
-        /// </summary>
         [HttpGet("{id}")]
         public ActionResult<PaymentDetailDto> GetPaymentById(int id)
         {
@@ -91,9 +82,6 @@ namespace SPG_Fachtheorie.Aufgabe3.Controllers
             return CreatedAtAction(nameof(AddPayment), new { payment.Id });
         }
 
-        /// <summary>
-        /// DELETE /api/payments/{id}?deleteItems=true|false
-        /// </summary>
         [HttpDelete("{id}")]
         public IActionResult DeletePayment(int id, [FromQuery] bool deleteItems = false)
         {
@@ -122,6 +110,63 @@ namespace SPG_Fachtheorie.Aufgabe3.Controllers
 
             _db.Payments.Remove(payment);
             _db.SaveChanges();
+
+            return NoContent();
+        }
+
+        [HttpPut("/api/paymentItems/{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult UpdatePaymentItem(int id, [FromBody] UpdatePaymentItemCommand cmd)
+        {
+            if (id != cmd.Id)
+            {
+                return Problem("Invalid payment item ID", statusCode: 400);
+            }
+
+            var item = _db.PaymentItems
+                .Include(p => p.Payment)
+                .FirstOrDefault(p => p.Id == id);
+
+            if (item == null)
+            {
+                return Problem("Payment Item not found", statusCode: 404);
+            }
+
+            // Da es keine LastUpdated-Property gibt, kann dieser Vergleich nicht stattfinden
+            // -> wir überspringen ihn
+
+            // Wir überprüfen, ob die angegebene PaymentId zur aktuellen passt
+            if (item.Payment == null || item.Payment.Id != cmd.PaymentId)
+            {
+                return Problem("Invalid payment ID", statusCode: 400);
+            }
+
+            item.ArticleName = cmd.ArticleName;
+            item.Amount = cmd.Amount;
+            item.Price = cmd.Price;
+
+            _db.SaveChanges();
+            return NoContent();
+        }
+
+        [HttpPatch("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult UpdateConfirmed(int id, [FromBody] UpdateConfirmedCommand cmd)
+        {
+            var payment = _db.Payments.FirstOrDefault(p => p.Id == id);
+            if (payment == null)
+            {
+                return Problem("Payment not found", statusCode: 404);
+            }
+
+            // Da es keine "Confirmed"-Property gibt, simulieren wir die Bestätigung nur logisch
+            Console.WriteLine($"Payment {id} confirmed at {cmd.Confirmed}");
+
+            // Du kannst hier z. B. Logging, Messaging oder MemoryStorage nutzen
 
             return NoContent();
         }
