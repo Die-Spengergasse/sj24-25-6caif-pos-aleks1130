@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Any;
+using SPG_Fachtheorie.Aufgabe1.Commands;
 using SPG_Fachtheorie.Aufgabe1.Infrastructure;
 using SPG_Fachtheorie.Aufgabe1.Model;
+using SPG_Fachtheorie.Aufgabe1.Services;
 using SPG_Fachtheorie.Aufgabe3.Commands;
 using SPG_Fachtheorie.Aufgabe3.Dtos;
 
@@ -14,11 +16,11 @@ namespace SPG_Fachtheorie.Aufgabe3.Controllers
     [ApiController]              // Soll von ASP gemappt werden
     public class EmployeesController : ControllerBase
     {
-        private readonly AppointmentContext _db;
+        private readonly EmployeeService _service;
 
-        public EmployeesController(AppointmentContext db)
+        public EmployeesController(EmployeeService service)
         {
-            _db = db;
+            _service = service;
         }
 
         /// <summary>
@@ -30,7 +32,7 @@ namespace SPG_Fachtheorie.Aufgabe3.Controllers
         [HttpGet]
         public ActionResult<List<EmployeeDto>> GetAllEmployees([FromQuery] string? type)
         {
-            var employees = _db.Employees
+            var employees = _service.Employees
                 .Where(e => string.IsNullOrEmpty(type)
                     ? true : e.Type.ToLower() == type.ToLower())
                 .Select(e => new EmployeeDto(
@@ -48,7 +50,7 @@ namespace SPG_Fachtheorie.Aufgabe3.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<EmployeeDetailDto> GetEmployee(int registrationNumber)
         {
-            var employees = _db.Employees
+            var employees = _service.Employees
                 .Where(e => e.RegistrationNumber == registrationNumber)
                 .Select(e => new EmployeeDetailDto(
                     e.RegistrationNumber,
@@ -68,77 +70,83 @@ namespace SPG_Fachtheorie.Aufgabe3.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public IActionResult AddManager(NewManagerCommand cmd)
         {
-            var manager = new Manager(
-                cmd.RegistrationNumber, cmd.FirstName, cmd.LastName,
-                cmd.Address is null ? null : new Address(cmd.Address.Street, cmd.Address.Zip, cmd.Address.City),
-                cmd.CarType);
-            _db.Managers.Add(manager);
             try
             {
-                _db.SaveChanges();
+                var manager = _service.AddManager(cmd);
+                return CreatedAtAction(nameof(AddManager), new { manager.RegistrationNumber });
             }
-            catch (DbUpdateException e)
+            catch (EmployeeServiceException e)
             {
-                // 400 Bad request: clientdaten fehlerhaft, der client soll die Daten nicht erneut senden.
-                return Problem(e.InnerException?.Message ?? e.Message, statusCode: 400);
+                return Problem(e.Message, statusCode: 400);
             }
-            // Den primary key des neuen DB Objektes zurückgeben.
-            return CreatedAtAction(nameof(AddManager), new { manager.RegistrationNumber });
         }
 
-        /// POST /api/employee/manager
+        /// POST /api/employee/cashier
         [HttpPost("cashier")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public IActionResult AddCashier(NewCashierCommand cmd)
         {
-            var cashier = new Cashier(
-                cmd.RegistrationNumber, cmd.FirstName, cmd.LastName,
-                cmd.Address is null ? null : new Address(cmd.Address.Street, cmd.Address.Zip, cmd.Address.City),
-                cmd.JobSpezialisation);
-            _db.Cashiers.Add(cashier);
             try
             {
-                _db.SaveChanges();
+                var cashier = _service.AddCashier(cmd);
+                return CreatedAtAction(nameof(AddCashier), new { cashier.RegistrationNumber });
             }
-            catch (DbUpdateException e)
+            catch (EmployeeServiceException e)
             {
-                // 400 Bad request: clientdaten fehlerhaft, der client soll die Daten nicht erneut senden.
-                return Problem(e.InnerException?.Message ?? e.Message, statusCode: 400);
+                return Problem(e.Message, statusCode: 400);
             }
-            // Den primary key des neuen DB Objektes zurückgeben.
-            return CreatedAtAction(nameof(AddManager), new { cashier.RegistrationNumber });
         }
 
         [HttpDelete("{registrationNumber}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public IActionResult DeleteEmployee(int registrationNumber)
-        {
-            var paymentItems = _db.PaymentItems
-                .Where(p => p.Payment.Employee.RegistrationNumber == registrationNumber)
-                .ToList();
-            var payments = _db.Payments
-                .Where(p => p.Employee.RegistrationNumber == registrationNumber)
-                .ToList();
+        public IActionResult DeleteEmployee(int registrationNumber) =>
+            CallServiceMethod(() => _service.DeleteEmployee(registrationNumber), NoContent());
 
-            var employee = _db.Employees
-                .FirstOrDefault(e => e.RegistrationNumber == registrationNumber);
-            if (employee is null) return NoContent();
+
+        /// <summary>
+        /// PUT /api/manager/{registrationNumber}
+        /// </summary>
+
+        [HttpPut("/api/manager/{registrationNumber}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult UpdateManager(
+            int registrationNumber, [FromBody] UpdateManagerCommand cmd)
+        {
+            if (registrationNumber != cmd.RegistrationNumber)
+                return Problem("Invalid registration number", statusCode: 400);
+            return CallServiceMethod(() => _service.UpdateManager(cmd), NoContent());
+        }
+
+        /// <summary>
+        /// PATCH /api/employees/{registrationNumber}/address
+        /// </summary>
+        [HttpPatch("{registrationNumber}/address")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult UpdateAddress(
+            int registrationNumber, [FromBody] UpdateAddressCommand cmd) =>
+            CallServiceMethod(() => _service.UpdateAddress(registrationNumber, cmd), NoContent());
+
+        private IActionResult CallServiceMethod(Action action, IActionResult successResult)
+        {
             try
             {
-                _db.PaymentItems.RemoveRange(paymentItems);
-                _db.SaveChanges();
-                _db.Payments.RemoveRange(payments);
-                _db.SaveChanges();
-                _db.Employees.Remove(employee);
-                _db.SaveChanges();
+                action();
+                return successResult;
             }
-            catch (DbUpdateException e)
+            catch (EmployeeServiceException e) when (e.IsNotFoundError == true)
             {
-                return Problem(e.InnerException?.Message ?? e.Message, statusCode: 400);
+                return Problem(e.Message, statusCode: 404);
             }
-            return NoContent();
+            catch (EmployeeServiceException e)
+            {
+                return Problem(e.Message, statusCode: 400);
+            }
         }
     }
 }

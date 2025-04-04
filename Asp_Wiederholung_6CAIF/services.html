@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.23">
-<title>PUT und PATCH API Endpunkte für Payments</title>
+<title>Services, Unittests und Mocks</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /*! Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -555,7 +555,7 @@ pre.rouge .gs {
 </head>
 <body class="article">
 <div id="header">
-<h1>PUT und PATCH API Endpunkte für Payments</h1>
+<h1>Services, Unittests und Mocks</h1>
 </div>
 <div id="content">
 <div id="preamble">
@@ -568,131 +568,131 @@ pre.rouge .gs {
 </div>
 </div>
 <div class="sect1">
-<h2 id="_put_apipaymentitemsid">PUT /api/paymentItems/{id}</h2>
+<h2 id="_payment_service">Payment Service</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Es kann vorkommen, dass ein PaymentItem aktualisiert werden muss.
-Deswegen soll im Controller <em>PaymentsController</em> soll ein Endpunkt für das Aktualisieren von PaymentItems angelegt werden.
-Der Payload sieht z. B. so aus</p>
-</div>
-<div class="listingblock">
-<div class="title">PUT /api/paymentItems/1</div>
-<div class="content">
-<pre class="rouge highlight"><code data-lang="json"><span class="p">{</span><span class="w">
-  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"articleName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Coca Cola 0.5l"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"amount"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"price"</span><span class="p">:</span><span class="w"> </span><span class="mf">1.65</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"paymentId"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"lastUpdated"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
-</span><span class="p">}</span></code></pre>
-</div>
+<p>Es soll ein Service geschrieben und getestet werden, das das Handling von Zahlungen abwickeln soll.
+Erstelle dafür im Projekt <em>Aufgabe1</em> im Ordner <em>Services</em> eine Klasse <em>PaymentService.cs</em>.
+Registriere das Service korrekt in der Datei <em>Program.cs</em> in ASP.NET Core.</p>
 </div>
 <div class="paragraph">
-<p>Gehe bei der Umsetzung wie folgt vor:</p>
+<p>Es sind 4 Methoden zu implementieren:</p>
+</div>
+<div class="sect2">
+<h3 id="_payment_createpaymentnewpaymentcommand_cmd">Payment CreatePayment(NewPaymentCommand cmd)</h3>
+<div class="paragraph">
+<p>Stelle sicher, dass in der Modelklasse <em>Payment</em> ein Property <em>Confirmed</em> besitzt (wie in einer der vorigen Übungen gefordert).
+Das Property hat den Typ DateTime, ist nullable und soll standardmäßig auf null gesetzt sein.</p>
+</div>
+<div class="paragraph">
+<p>Entferne das Property <em>PaymentDateTime</em> aus der Klasse <em>NewPaymentCommand</em>.
+Der Wert soll im Service auf <em>DateTime.UtcNow</em> gesetzt werden.</p>
+</div>
+<div class="paragraph">
+<p>Beim Anlegen des Payments muss folgendes geprüft werden:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>Füge in der Modelklasse <em>PaymentItem</em> das Feld <em>LastUpdated</em> vom Typ <em>DateTime</em> (nullable) hinzu.
-Das Feld soll standardmäßig auf <em>null</em> gesetzt sein und bei jedem Update des Datensatzes aktualisiert werden.</p>
+<p>Befindet sich bereits ein Payment für diese Kassa (<em>CashDesk</em>), das nicht den Status <em>Confirmed</em> besitzt (der DateTime Wert ist NULL), soll eine <em>PaymentServiceException</em> mit dem Inhalt "Open payment for cashdesk." geworfen werden.</p>
 </li>
 <li>
-<p>Lege ein Command Objekt <em>UpdatePaymentItemCommand</em> an, das die Informationen aus dem Payload speichern kann.
-Berücksichtige in der Validierung, dass</p>
-<div class="ulist">
-<ul>
-<li>
-<p>Die <em>id</em> größer als 0 ist.</p>
-</li>
-<li>
-<p>Der <em>articleName</em> nicht leer ist.</p>
-</li>
-<li>
-<p>Der <em>amount</em> größer als 0 ist.</p>
-</li>
-<li>
-<p>Der <em>price</em> größer als 0 ist.</p>
-</li>
-<li>
-<p>Die <em>paymentId</em> größer als 0 ist.</p>
+<p>Ist der PaymentType vom Typ <em>CreditCard</em>, darf die Zahlung nur ein Employee vom Typ <em>Manager</em> anlegen.
+Falls nicht soll eine <em>PaymentServiceException</em> mit dem Inhalt "Insufficient rights to create a credit card payment." geworfen werden.</p>
 </li>
 </ul>
 </div>
+<div class="paragraph">
+<p>Werden die Bedingungen erfüllt, so wird der Datensatz eingefügt.
+Betrachte die bereits implementierte Methode in <em>PaymentsController.AddPayment()</em>.
+Du kannst diese Logik übernehmen und um die oben beschriebenen Bedingungen ergänzen.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_void_confirmpaymentint_paymentid">void ConfirmPayment(int paymentId)</h3>
+<div class="paragraph">
+<p>Im Controller ist bereis der Endpunkt <em>PATCH /api/payments/{id}</em> implementiert.
+Führe ein Refactoring durch, sodass die Logik nun in der Servicemethode behandelt wird.
+Der Datumswert soll nicht über das Command gelesen, sondern über <em>DateTime.UtcNow</em> gesetzt werden.
+Hat das Payment bereits einen Wert in <em>Confirmed</em>, soll eine <em>PaymentServiceException</em> mit dem Inhalt "Payment already confirmed." geworfen werden.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_void_addpaymentitemnewpaymentitemcommand_cmd">void AddPaymentItem(NewPaymentItemCommand cmd)</h3>
+<div class="paragraph">
+<p>Lege eine Klasse <em>NewPaymentItemCommand</em> an. Sie soll die Felder <em>ArticleName</em> (string), <em>Amount</em> (int), <em>Price</em> (decimal) und <em>PaymentId</em> (int) besitzen.
+Versehe die Klasse mit sinnvollen Validierungen.</p>
+</div>
+<div class="paragraph">
+<p>Die Servicemethode soll das PaymentItem einfügen.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Wird das Payment in <em>PaymentId</em> nicht gefunden, so soll eine <em>PaymentServiceException</em> mit dem Inhalt "Payment not found." geworfen werden.</p>
 </li>
 <li>
-<p>Ergänze den Endpunkt im Controller <em>PaymentsController</em>.
-Es soll kein eigener Controller für PaymentItems angelegt werden.</p>
-</li>
-<li>
-<p>Wurde das PaymentItem mit der übergebenen Id nicht gefunden, so ist Problem mit dem Status Code 404 und der Meldung "Payment Item not found" zu liefern.</p>
-</li>
-<li>
-<p>Stimmt der gespeicherte Timestamp in <em>LastUpdated</em> nicht mit dem Timestamp aus dem Payload überein, so ist Problem mit dem Status Code 400 und der Meldung "Payment item has changed" zu liefern.</p>
-</li>
-<li>
-<p>Stimmt das Property <em>id</em> aus dem Payload nicht mit der übergebenen ID aus dem Routing Parameter ein, so ist Problem mit dem Status Code 400 und der Meldung "Invalid payment item ID" zu liefern.</p>
-</li>
-<li>
-<p>Frage das Objekt, auf das sich das Property <em>paymentId</em> bezieht, ab.
-Wird es nicht gefunden, so ist Problem mit dem Status Code 400 und der Meldung "Invalid payment ID" zu liefern.</p>
-</li>
-<li>
-<p>Aktualisiere den Datensatz und liefere no content zurück.</p>
+<p>Hat das Payment bereits den Status <em>Confirmed</em>, so soll eine <em>PaymentServiceException</em> mit dem Inhalt "Payment already confirmed." geworfen werden.</p>
 </li>
 </ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_void_deletepaymentint_paymentid_bool_deleteitems">void DeletePayment(int paymentId, bool deleteItems)</h3>
+<div class="paragraph">
+<p>Im Controller <em>PaymentController</em> ist die Logik zum Löschen von Payments bereits enthalten.
+Führe ein Refactoring durch, sodass diese Funktionalität im Service implementiert wird.
+Achte daruf, dass nur Exceptions vom Typ <em>_PaymentServiceException</em> geworfen werden.</p>
+</div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_patch_apipaymentsid">PATCH /api/payments/{id}</h2>
+<h2 id="_anpassen_des_paymentcontrollers">Anpassen des <em>PaymentControllers</em></h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>Es soll auch möglich sein, ein Payment zu aktualisieren.
-Füge dafür ein Property <em>Confirmed</em> zur Modelklasse <em>Payment</em> hinzu.
-Das Property hat den Typ <em>DateTime</em>, ist nullable und soll standardmäßig auf <em>null</em> gesetzt sein.
-Der PATCH Endpunkt soll das Property <em>Confirmed</em> aktualisieren.
-Lege hierfür den Endpunkt in <em>PaymentsController</em> an.
-Der Payload sieht z. B. so aus</p>
-</div>
-<div class="listingblock">
-<div class="title">PATCH /api/payments/1</div>
-<div class="content">
-<pre class="rouge highlight"><code data-lang="json"><span class="p">{</span><span class="w">
-  </span><span class="nl">"confirmed"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2025-03-21T14:00:00"</span><span class="w">
-</span><span class="p">}</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Gehe bei der Umsetzung wie folgt vor:</p>
-</div>
 <div class="ulist">
 <ul>
 <li>
-<p>Lege ein Command Objekt <em>UpdateConfirmedCommand</em> an, das die Informationen aus dem Payload speichern kann.
-Berücksichtige in der Validierung, dass der Datumswert von <em>confirmed</em> maximal 1 Minute in der Zukunft liegen darf.
-Hinweis: Implementiere dafür das Interface <em>IValidatableObject</em>.</p>
+<p>Die Klasse <em>PaymentController</em> darf keine Dependency zur Klasse <em>AppointmentContext</em> mehr haben.
+Stattdessen soll eine Dependencs zum <em>PaymentService</em> eingefügt werden.</p>
 </li>
 <li>
-<p>Ergänze den Endpunkt im Controller <em>PaymentsController</em>.</p>
+<p>Für die <em>GET</em> Methoden soll das <em>PaymentService</em> ein Property <em>Payments</em> vom Typ <em>IQueryable</em> zur Verfügung stellen.</p>
 </li>
 <li>
-<p>Wurde das Payment mit der übergebenen ID nicht gefunden, so ist Problem mit dem Status Code 404 und der Meldung "Payment not found" zu liefern.</p>
+<p>Die anderen Methoden sollen nur die Servicemethode aufrufen und durch korrekte Fehlerbehandlung den richtigen Status zurückliefern.
+Unten ist ein Beispiel für die Rumpflogik, wie sie im Controller sein soll.</p>
 </li>
 <li>
-<p>Wurde das Payment bereits bestätigt (<em>Confirmed</em> ist nicht <em>null</em>), so ist Problem mit dem Status Code 400 und der Meldung "Payment already confirmed" zu liefern.</p>
-</li>
-<li>
-<p>Aktualisiere den Datensatz und liefere no content zurück.</p>
+<p>Die PUT Route für <em>PaymentItems</em> kann auskommentiert werden.</p>
 </li>
 </ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="csharp"><span class="p">[</span><span class="n">HttpPost</span><span class="p">]</span>
+<span class="p">[</span><span class="nf">ProducesResponseType</span><span class="p">(</span><span class="n">StatusCodes</span><span class="p">.</span><span class="n">Status201Created</span><span class="p">)]</span>
+<span class="p">[</span><span class="nf">ProducesResponseType</span><span class="p">(</span><span class="n">StatusCodes</span><span class="p">.</span><span class="n">Status400BadRequest</span><span class="p">)]</span>
+<span class="k">public</span> <span class="n">IActionResult</span> <span class="nf">AddPayment</span><span class="p">([</span><span class="n">FromBody</span><span class="p">]</span> <span class="n">NewPaymentCommand</span> <span class="n">cmd</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">try</span>
+    <span class="p">{</span>
+        <span class="kt">var</span> <span class="n">payment</span> <span class="p">=</span> <span class="n">_service</span><span class="p">.</span><span class="nf">CreatePayment</span><span class="p">(</span><span class="n">cmd</span><span class="p">);</span>
+        <span class="k">return</span> <span class="nf">CreatedAtAction</span><span class="p">(</span><span class="k">nameof</span><span class="p">(</span><span class="n">AddPayment</span><span class="p">),</span> <span class="k">new</span> <span class="p">{</span> <span class="n">payment</span><span class="p">.</span><span class="n">Id</span> <span class="p">});</span>
+    <span class="p">}</span>
+    <span class="k">catch</span> <span class="p">(</span><span class="n">PaymentServiceException</span> <span class="n">e</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nf">Problem</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">Message</span><span class="p">,</span> <span class="n">statusCode</span><span class="p">:</span> <span class="m">400</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre>
+</div>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-03-21 15:56:38 UTC
+Last updated 2025-03-28 11:17:09 UTC
 </div>
 </div>
 </body>

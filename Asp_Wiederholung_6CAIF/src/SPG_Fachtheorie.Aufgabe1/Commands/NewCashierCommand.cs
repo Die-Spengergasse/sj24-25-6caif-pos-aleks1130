@@ -1,6 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
-namespace SPG_Fachtheorie.Aufgabe3.Commands
+namespace SPG_Fachtheorie.Aufgabe1.Commands
 {
     public record NewCashierCommand(
         [Range(1000,9999,ErrorMessage = "Invalid RegistrationNumber")]
@@ -9,6 +11,9 @@ namespace SPG_Fachtheorie.Aufgabe3.Commands
         string FirstName,
         [StringLength(255, MinimumLength = 1, ErrorMessage = "Invalid lastname.")]
         string LastName,
+        DateOnly Birthdate,
+        [Range(0, 1_000_000)]
+        decimal? Salary,
         AddressCmd? Address,
         string JobSpezialisation
     ) : IValidatableObject

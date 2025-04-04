@@ -1,11 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
-namespace SPG_Fachtheorie.Aufgabe3.Commands
+namespace SPG_Fachtheorie.Aufgabe1.Commands
 {
-    // Die Command Klasse speichert den Payload,
-    // den uns der Client schickt.
-    public record NewManagerCommand(
-        [Range(1000,9999,ErrorMessage = "Invalid RegistrationNumber")]
+    public record UpdateManagerCommand(
         int RegistrationNumber,
         [StringLength(255, MinimumLength = 1, ErrorMessage = "Invalid firstname.")]
         string FirstName,
@@ -13,6 +11,7 @@ namespace SPG_Fachtheorie.Aufgabe3.Commands
         string LastName,
         AddressCmd? Address,
         [RegularExpression(@"^[A-Z][A-Za-z0-9 ]+$", ErrorMessage = "Invalid car type.")]
-        string CarType
+        string CarType,
+        DateTime? LastUpdate
     );
 }
