@@ -7,13 +7,15 @@ namespace SPG_Fachtheorie.Aufgabe1.Model
     {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
         protected Payment() { }
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+#pragma warning restore CS8618
+
         public Payment(CashDesk cashDesk, DateTime paymentDateTime, Employee employee, PaymentType paymentType)
         {
             CashDesk = cashDesk;
             PaymentDateTime = paymentDateTime;
             Employee = employee;
             PaymentType = paymentType;
+            Confirmed = null; // Standardwert
         }
 
         public int Id { get; set; }
@@ -21,7 +23,10 @@ namespace SPG_Fachtheorie.Aufgabe1.Model
         public DateTime PaymentDateTime { get; set; }
         public Employee Employee { get; set; }
         public PaymentType PaymentType { get; set; }
+
+        // ✅ NEU: Wird im Service gesetzt, Standard = null
         public DateTime? Confirmed { get; set; }
+
         public List<PaymentItem> PaymentItems { get; } = new();
     }
 }
