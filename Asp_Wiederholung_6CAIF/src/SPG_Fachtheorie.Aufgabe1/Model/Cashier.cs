@@ -17,6 +17,10 @@ namespace SPG_Fachtheorie.Aufgabe1.Model
             JobSpezialisation = jobSpezialisation;
         }
 
+        public Cashier(int registrationNumber, string firstName, string lastName, DateOnly birthday, decimal? salary, Address? address) : base(registrationNumber, firstName, lastName, birthday, salary, address)
+        {
+        }
+
         [MaxLength(255)]
         public string JobSpezialisation { get; set; }
     }

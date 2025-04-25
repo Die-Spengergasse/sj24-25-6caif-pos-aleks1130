@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.23">
-<title>Services, Unittests und Mocks</title>
+<title>Parametrisierte Unittests</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /*! Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -434,128 +434,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-<style>
-pre.rouge table td { padding: 5px; }
-pre.rouge table pre { margin: 0; }
-pre.rouge, pre.rouge .w {
-  color: #24292f;
-  background-color: #f6f8fa;
-}
-pre.rouge .k, pre.rouge .kd, pre.rouge .kn, pre.rouge .kp, pre.rouge .kr, pre.rouge .kt, pre.rouge .kv {
-  color: #cf222e;
-}
-pre.rouge .gr {
-  color: #f6f8fa;
-}
-pre.rouge .gd {
-  color: #82071e;
-  background-color: #ffebe9;
-}
-pre.rouge .nb {
-  color: #953800;
-}
-pre.rouge .nc {
-  color: #953800;
-}
-pre.rouge .no {
-  color: #953800;
-}
-pre.rouge .nn {
-  color: #953800;
-}
-pre.rouge .sr {
-  color: #116329;
-}
-pre.rouge .na {
-  color: #116329;
-}
-pre.rouge .nt {
-  color: #116329;
-}
-pre.rouge .gi {
-  color: #116329;
-  background-color: #dafbe1;
-}
-pre.rouge .ges {
-  font-weight: bold;
-  font-style: italic;
-}
-pre.rouge .kc {
-  color: #0550ae;
-}
-pre.rouge .l, pre.rouge .ld, pre.rouge .m, pre.rouge .mb, pre.rouge .mf, pre.rouge .mh, pre.rouge .mi, pre.rouge .il, pre.rouge .mo, pre.rouge .mx {
-  color: #0550ae;
-}
-pre.rouge .sb {
-  color: #0550ae;
-}
-pre.rouge .bp {
-  color: #0550ae;
-}
-pre.rouge .ne {
-  color: #0550ae;
-}
-pre.rouge .nl {
-  color: #0550ae;
-}
-pre.rouge .py {
-  color: #0550ae;
-}
-pre.rouge .nv, pre.rouge .vc, pre.rouge .vg, pre.rouge .vi, pre.rouge .vm {
-  color: #0550ae;
-}
-pre.rouge .o, pre.rouge .ow {
-  color: #0550ae;
-}
-pre.rouge .gh {
-  color: #0550ae;
-  font-weight: bold;
-}
-pre.rouge .gu {
-  color: #0550ae;
-  font-weight: bold;
-}
-pre.rouge .s, pre.rouge .sa, pre.rouge .sc, pre.rouge .dl, pre.rouge .sd, pre.rouge .s2, pre.rouge .se, pre.rouge .sh, pre.rouge .sx, pre.rouge .s1, pre.rouge .ss {
-  color: #0a3069;
-}
-pre.rouge .nd {
-  color: #8250df;
-}
-pre.rouge .nf, pre.rouge .fm {
-  color: #8250df;
-}
-pre.rouge .err {
-  color: #f6f8fa;
-  background-color: #82071e;
-}
-pre.rouge .c, pre.rouge .ch, pre.rouge .cd, pre.rouge .cm, pre.rouge .cp, pre.rouge .cpf, pre.rouge .c1, pre.rouge .cs {
-  color: #6e7781;
-}
-pre.rouge .gl {
-  color: #6e7781;
-}
-pre.rouge .gt {
-  color: #6e7781;
-}
-pre.rouge .ni {
-  color: #24292f;
-}
-pre.rouge .si {
-  color: #24292f;
-}
-pre.rouge .ge {
-  color: #24292f;
-  font-style: italic;
-}
-pre.rouge .gs {
-  color: #24292f;
-  font-weight: bold;
-}
-</style>
 </head>
 <body class="article">
 <div id="header">
-<h1>Services, Unittests und Mocks</h1>
+<h1>Parametrisierte Unittests</h1>
 </div>
 <div id="content">
 <div id="preamble">
@@ -568,131 +450,56 @@ pre.rouge .gs {
 </div>
 </div>
 <div class="sect1">
-<h2 id="_payment_service">Payment Service</h2>
+<h2 id="_testklasse">Testklasse</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Es soll ein Service geschrieben und getestet werden, das das Handling von Zahlungen abwickeln soll.
-Erstelle dafür im Projekt <em>Aufgabe1</em> im Ordner <em>Services</em> eine Klasse <em>PaymentService.cs</em>.
-Registriere das Service korrekt in der Datei <em>Program.cs</em> in ASP.NET Core.</p>
-</div>
-<div class="paragraph">
-<p>Es sind 4 Methoden zu implementieren:</p>
-</div>
-<div class="sect2">
-<h3 id="_payment_createpaymentnewpaymentcommand_cmd">Payment CreatePayment(NewPaymentCommand cmd)</h3>
-<div class="paragraph">
-<p>Stelle sicher, dass in der Modelklasse <em>Payment</em> ein Property <em>Confirmed</em> besitzt (wie in einer der vorigen Übungen gefordert).
-Das Property hat den Typ DateTime, ist nullable und soll standardmäßig auf null gesetzt sein.</p>
-</div>
-<div class="paragraph">
-<p>Entferne das Property <em>PaymentDateTime</em> aus der Klasse <em>NewPaymentCommand</em>.
-Der Wert soll im Service auf <em>DateTime.UtcNow</em> gesetzt werden.</p>
-</div>
-<div class="paragraph">
-<p>Beim Anlegen des Payments muss folgendes geprüft werden:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Befindet sich bereits ein Payment für diese Kassa (<em>CashDesk</em>), das nicht den Status <em>Confirmed</em> besitzt (der DateTime Wert ist NULL), soll eine <em>PaymentServiceException</em> mit dem Inhalt "Open payment for cashdesk." geworfen werden.</p>
-</li>
-<li>
-<p>Ist der PaymentType vom Typ <em>CreditCard</em>, darf die Zahlung nur ein Employee vom Typ <em>Manager</em> anlegen.
-Falls nicht soll eine <em>PaymentServiceException</em> mit dem Inhalt "Insufficient rights to create a credit card payment." geworfen werden.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Werden die Bedingungen erfüllt, so wird der Datensatz eingefügt.
-Betrachte die bereits implementierte Methode in <em>PaymentsController.AddPayment()</em>.
-Du kannst diese Logik übernehmen und um die oben beschriebenen Bedingungen ergänzen.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_void_confirmpaymentint_paymentid">void ConfirmPayment(int paymentId)</h3>
-<div class="paragraph">
-<p>Im Controller ist bereis der Endpunkt <em>PATCH /api/payments/{id}</em> implementiert.
-Führe ein Refactoring durch, sodass die Logik nun in der Servicemethode behandelt wird.
-Der Datumswert soll nicht über das Command gelesen, sondern über <em>DateTime.UtcNow</em> gesetzt werden.
-Hat das Payment bereits einen Wert in <em>Confirmed</em>, soll eine <em>PaymentServiceException</em> mit dem Inhalt "Payment already confirmed." geworfen werden.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_void_addpaymentitemnewpaymentitemcommand_cmd">void AddPaymentItem(NewPaymentItemCommand cmd)</h3>
-<div class="paragraph">
-<p>Lege eine Klasse <em>NewPaymentItemCommand</em> an. Sie soll die Felder <em>ArticleName</em> (string), <em>Amount</em> (int), <em>Price</em> (decimal) und <em>PaymentId</em> (int) besitzen.
-Versehe die Klasse mit sinnvollen Validierungen.</p>
-</div>
-<div class="paragraph">
-<p>Die Servicemethode soll das PaymentItem einfügen.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Wird das Payment in <em>PaymentId</em> nicht gefunden, so soll eine <em>PaymentServiceException</em> mit dem Inhalt "Payment not found." geworfen werden.</p>
-</li>
-<li>
-<p>Hat das Payment bereits den Status <em>Confirmed</em>, so soll eine <em>PaymentServiceException</em> mit dem Inhalt "Payment already confirmed." geworfen werden.</p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_void_deletepaymentint_paymentid_bool_deleteitems">void DeletePayment(int paymentId, bool deleteItems)</h3>
-<div class="paragraph">
-<p>Im Controller <em>PaymentController</em> ist die Logik zum Löschen von Payments bereits enthalten.
-Führe ein Refactoring durch, sodass diese Funktionalität im Service implementiert wird.
-Achte daruf, dass nur Exceptions vom Typ <em>_PaymentServiceException</em> geworfen werden.</p>
-</div>
+<p>Lege im Projekt <em>SPG_Fachtheorie.Aufgabe1.Test</em> eine Klasse <em>PaymentServiceTests</em> an.
+Kopiere die Methode <em>GetEmptyDbContext()</em> aus den anderen Testklassen in diese Klasse.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_anpassen_des_paymentcontrollers">Anpassen des <em>PaymentControllers</em></h2>
+<h2 id="_tests_für_createpayment">Tests für <em>CreatePayment()</em></h2>
 <div class="sectionbody">
-<div class="ulist">
-<ul>
-<li>
-<p>Die Klasse <em>PaymentController</em> darf keine Dependency zur Klasse <em>AppointmentContext</em> mehr haben.
-Stattdessen soll eine Dependencs zum <em>PaymentService</em> eingefügt werden.</p>
-</li>
-<li>
-<p>Für die <em>GET</em> Methoden soll das <em>PaymentService</em> ein Property <em>Payments</em> vom Typ <em>IQueryable</em> zur Verfügung stellen.</p>
-</li>
-<li>
-<p>Die anderen Methoden sollen nur die Servicemethode aufrufen und durch korrekte Fehlerbehandlung den richtigen Status zurückliefern.
-Unten ist ein Beispiel für die Rumpflogik, wie sie im Controller sein soll.</p>
-</li>
-<li>
-<p>Die PUT Route für <em>PaymentItems</em> kann auskommentiert werden.</p>
-</li>
-</ul>
+<div class="paragraph">
+<p>Prüfe mit der Testmethode <em>CreatePaymentExceptionsTest()</em>, ob die Fehlermeldungen korrekt geworfen werden.
+Verwende dafür einen parametrisierten Test, der die verschiedenen Werte des Command Objects und die erwartete Fehlermeldung angeben.
+Um den erfolgreichen Durchlauf der Methode zu prüfen, lege eine Testmethode <em>CreatePaymentSuccessTest()</em> an.</p>
 </div>
-<div class="listingblock">
-<div class="content">
-<pre class="rouge highlight"><code data-lang="csharp"><span class="p">[</span><span class="n">HttpPost</span><span class="p">]</span>
-<span class="p">[</span><span class="nf">ProducesResponseType</span><span class="p">(</span><span class="n">StatusCodes</span><span class="p">.</span><span class="n">Status201Created</span><span class="p">)]</span>
-<span class="p">[</span><span class="nf">ProducesResponseType</span><span class="p">(</span><span class="n">StatusCodes</span><span class="p">.</span><span class="n">Status400BadRequest</span><span class="p">)]</span>
-<span class="k">public</span> <span class="n">IActionResult</span> <span class="nf">AddPayment</span><span class="p">([</span><span class="n">FromBody</span><span class="p">]</span> <span class="n">NewPaymentCommand</span> <span class="n">cmd</span><span class="p">)</span>
-<span class="p">{</span>
-    <span class="k">try</span>
-    <span class="p">{</span>
-        <span class="kt">var</span> <span class="n">payment</span> <span class="p">=</span> <span class="n">_service</span><span class="p">.</span><span class="nf">CreatePayment</span><span class="p">(</span><span class="n">cmd</span><span class="p">);</span>
-        <span class="k">return</span> <span class="nf">CreatedAtAction</span><span class="p">(</span><span class="k">nameof</span><span class="p">(</span><span class="n">AddPayment</span><span class="p">),</span> <span class="k">new</span> <span class="p">{</span> <span class="n">payment</span><span class="p">.</span><span class="n">Id</span> <span class="p">});</span>
-    <span class="p">}</span>
-    <span class="k">catch</span> <span class="p">(</span><span class="n">PaymentServiceException</span> <span class="n">e</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="k">return</span> <span class="nf">Problem</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">Message</span><span class="p">,</span> <span class="n">statusCode</span><span class="p">:</span> <span class="m">400</span><span class="p">);</span>
-    <span class="p">}</span>
-<span class="p">}</span></code></pre>
 </div>
+</div>
+<div class="sect1">
+<h2 id="_tests_für_confirmpayment">Tests für <em>ConfirmPayment()</em></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Teste alle Fehlerzustände und den erfolgreichen Durchlauf der Methode.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_tests_für_addpaymentitem">Tests für <em>AddPaymentItem()</em></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Teste alle Fehlerzustände und den erfolgreichen Durchlauf der Methode.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_tests_für_deletepayment">Tests für <em>DeletePayment()</em></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Teste alle Fehlerzustände und den erfolgreichen Durchlauf der Methode.
+Achte im <em>arrange</em> darauf, dass auch Payment Items in der Datenbank vorhanden sind.</p>
+</div>
+<div class="paragraph">
+<p>Das Service ist mit 100% code coverage zu testen.</p>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-03-28 11:17:09 UTC
+Last updated 2025-04-11 12:21:47 UTC
 </div>
 </div>
 </body>

@@ -14,8 +14,6 @@ public class Program
             opt.UseSqlite("DataSource=cash.db");
         });
         builder.Services.AddScoped<EmployeeService>();
-        builder.Services.AddScoped<PaymentService>();
-
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
