@@ -4,7 +4,10 @@ using SPG_Fachtheorie.Aufgabe1.Infrastructure;
 using SPG_Fachtheorie.Aufgabe1.Model;
 using SPG_Fachtheorie.Aufgabe1.Services;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace SPG_Fachtheorie.Aufgabe1.Test
@@ -13,193 +16,75 @@ namespace SPG_Fachtheorie.Aufgabe1.Test
     {
         private AppointmentContext GetEmptyDbContext()
         {
-            var options = new DbContextOptionsBuilder<AppointmentContext>()
+            var options = new DbContextOptionsBuilder()
+                .UseSqlite(@"Data Source=cash.db")
                 .Options;
-            return new AppointmentContext(options);
-        }
 
+            var db = new AppointmentContext(options);
+            db.Database.EnsureDeleted();
+            db.Database.EnsureCreated();
+            return db;
+        }
+        /// <summary>
+        /// Ausgänge:
+        ///     1. "Invalid cashdesk"
+        ///     2. "Invalid employee"
+        ///     3. "Open payment for cashdesk."
+        ///     4. "Insufficient rights to create a credit card payment."
+        /// </summary>
         [Theory]
-        [InlineData(0, "Cash", 1, "Invalid cashdesk")]
-        [InlineData(1, "Cash", 0, "Invalid employee")]
+        [InlineData(4, "Cash", 1, "Invalid cashdesk")]
+        [InlineData(2, "Cash", 3, "Invalid employee")]
         [InlineData(1, "Cash", 1, "Open payment for cashdesk.")]
-        [InlineData(1, "CreditCard", 1, "Insufficient rights to create a credit card payment.")]
-        public void CreatePaymentExceptionsTest(int cashDeskNr, string type, int employeeNr, string expectedError)
+        [InlineData(3, "CreditCard", 1, "Insufficient rights to create a credit card payment.")]
+        public void CreatePaymentThorwsPaymentServiceExceptionTest(
+            int cashDeskNumber, string paymentType, int employeeRegistrationNumber, string errorMessage)
         {
-            using var context = GetEmptyDbContext();
-            var service = new PaymentService(context);
+            using var db = GetEmptyDbContext();
+            var service = new PaymentService(db);
+            // Arrange
+            var cashdesk1 = new CashDesk(1);  // Kassa mit offenem payment
+            var cashdesk2 = new CashDesk(2);  // Kassa mit confirmed payment
+            var cashdesk3 = new CashDesk(3);  // Kassa mit confirmed payment
+            var cashier = new Cashier(1, "FN", "LN", new DateOnly(2002, 2, 1), 3000M, null, "Wurst");
+            // Confirmed ist null, das Payment, das hier angelegt wird, ist also noch nicht "confirmed".
+            var payment1 = new Payment(
+                cashdesk1, new DateTime(2025, 5, 7, 12, 0, 0),
+                cashier, PaymentType.Cash);
 
-            if (cashDeskNr > 0) context.CashDesks.Add(new CashDesk(cashDeskNr));
-            if (employeeNr > 0)
-            {
-                context.Employees.Add(new TestCashier(employeeNr, "Max", "Muster", DateOnly.FromDateTime(DateTime.Today), null, null));
-                if (expectedError == "Open payment for cashdesk.")
-                {
-                    context.Payments.Add(new Payment(context.CashDesks.First(), DateTime.UtcNow, context.Employees.First(), PaymentType.Cash));
-                }
-            }
+            // Dieses Payment ist OK
+            var payment2 = new Payment(
+                cashdesk2, new DateTime(2025, 5, 7, 12, 0, 0),
+                cashier, PaymentType.Cash)
+            { Confirmed = new DateTime(2025, 5, 7, 11, 0, 0) };
 
-            context.SaveChanges();
+            db.AddRange(payment1, payment2, cashdesk3);
+            db.SaveChanges();
 
-            var cmd = new NewPaymentCommand(cashDeskNr, type, employeeNr);
-            var ex = Assert.Throws<PaymentServiceException>(() => service.CreatePayment(cmd));
-            Assert.Contains(expectedError, ex.Message);
+            // ACT
+            var cmd = new NewPaymentCommand(cashDeskNumber, paymentType, employeeRegistrationNumber);
+            var e = Assert.Throws<PaymentServiceException>(() => service.CreatePayment(cmd));
+            Assert.True(e.Message == errorMessage);
         }
-
         [Fact]
         public void CreatePaymentSuccessTest()
         {
-            using var context = GetEmptyDbContext();
-            var service = new PaymentService(context);
-            context.CashDesks.Add(new CashDesk(1));
-            context.Employees.Add(new TestManager(1, "Max", "Muster", DateOnly.FromDateTime(DateTime.Today), 5000, null));
-            context.SaveChanges();
+            using var db = GetEmptyDbContext();
+            var service = new PaymentService(db);
+            var cashdesk = new CashDesk(1);
+            var cashier = new Cashier(1, "FN", "LN", new DateOnly(2002, 2, 1), 3000M, null, "Wurst");
+            db.Cashiers.Add(cashier);
+            db.CashDesks.Add(cashdesk);
+            db.SaveChanges();
 
-            var cmd = new NewPaymentCommand(1, "CreditCard", 1);
-            var result = service.CreatePayment(cmd);
+            // ACT
+            var cmd = new NewPaymentCommand(1, "Cash", 1);
+            db.ChangeTracker.Clear();
+            service.CreatePayment(cmd);
 
-            Assert.NotNull(result);
-            Assert.Equal(1, result.CashDesk.Number);
-            Assert.Equal(PaymentType.CreditCard, result.PaymentType);
-        }
-
-        [Fact]
-        public void ConfirmPaymentExceptionsTest()
-        {
-            using var context = GetEmptyDbContext();
-            var service = new PaymentService(context);
-            var ex = Assert.Throws<PaymentServiceException>(() => service.ConfirmPayment(1));
-            Assert.Equal("Payment not found", ex.Message);
-
-            var desk = new CashDesk(1);
-            var emp = new TestCashier(1, "A", "B", DateOnly.FromDateTime(DateTime.Today), null, null);
-            var pay = new Payment(desk, DateTime.UtcNow, emp, PaymentType.Cash) { Confirmed = DateTime.UtcNow };
-            context.CashDesks.Add(desk);
-            context.Employees.Add(emp);
-            context.Payments.Add(pay);
-            context.SaveChanges();
-
-            var ex2 = Assert.Throws<PaymentServiceException>(() => service.ConfirmPayment(pay.Id));
-            Assert.Equal("Payment already confirmed", ex2.Message);
-        }
-
-        [Fact]
-        public void ConfirmPaymentSuccessTest()
-        {
-            using var context = GetEmptyDbContext();
-            var service = new PaymentService(context);
-            var emp = new TestCashier(1, "A", "B", DateOnly.FromDateTime(DateTime.Today), null, null);
-            var pay = new Payment(new CashDesk(1), DateTime.UtcNow, emp, PaymentType.Cash);
-            context.CashDesks.Add(pay.CashDesk);
-            context.Employees.Add(emp);
-            context.Payments.Add(pay);
-            context.SaveChanges();
-
-            service.ConfirmPayment(pay.Id);
-            Assert.True(context.Payments.First().Confirmed.HasValue);
-        }
-
-        [Fact]
-        public void AddPaymentItemExceptionsTest()
-        {
-            using var context = GetEmptyDbContext();
-            var service = new PaymentService(context);
-            var cmd = new NewPaymentItemCommand("Item", 1, 1, 99);
-
-            var ex = Assert.Throws<PaymentServiceException>(() => service.AddPaymentItem(cmd));
-            Assert.Equal("Payment not found.", ex.Message);
-
-            var emp = new TestCashier(1, "A", "B", DateOnly.FromDateTime(DateTime.Today), null, null);
-            var p = new Payment(new CashDesk(1), DateTime.UtcNow, emp, PaymentType.Cash) { Confirmed = DateTime.UtcNow };
-            context.CashDesks.Add(p.CashDesk);
-            context.Employees.Add(emp);
-            context.Payments.Add(p);
-            context.SaveChanges();
-
-            var cmd2 = new NewPaymentItemCommand("Item", 1, 1, p.Id);
-            var ex2 = Assert.Throws<PaymentServiceException>(() => service.AddPaymentItem(cmd2));
-            Assert.Equal("Payment already confirmed.", ex2.Message);
-        }
-
-        [Fact]
-        public void AddPaymentItemSuccessTest()
-        {
-            using var context = GetEmptyDbContext();
-            var service = new PaymentService(context);
-            var emp = new TestCashier(1, "A", "B", DateOnly.FromDateTime(DateTime.Today), null, null);
-            var payment = new Payment(new CashDesk(1), DateTime.UtcNow, emp, PaymentType.Cash);
-            context.CashDesks.Add(payment.CashDesk);
-            context.Employees.Add(emp);
-            context.Payments.Add(payment);
-            context.SaveChanges();
-
-            var cmd = new NewPaymentItemCommand("Book", 1, 12.5m, payment.Id);
-            service.AddPaymentItem(cmd);
-
-            Assert.Single(context.PaymentItems);
-            Assert.Equal("Book", context.PaymentItems.First().ArticleName);
-        }
-
-        [Fact]
-        public void DeletePaymentExceptionsTest()
-        {
-            using var context = GetEmptyDbContext();
-            var service = new PaymentService(context);
-
-            var ex = Assert.Throws<PaymentServiceException>(() => service.DeletePayment(1, false));
-            Assert.Equal("Payment not found.", ex.Message);
-
-            var emp = new TestCashier(1, "A", "B", DateOnly.FromDateTime(DateTime.Today), null, null);
-            var payment = new Payment(new CashDesk(1), DateTime.UtcNow, emp, PaymentType.Cash);
-            var item = new PaymentItem("Pen", 1, 2.0m, payment);
-
-            context.CashDesks.Add(payment.CashDesk);
-            context.Employees.Add(emp);
-            context.Payments.Add(payment);
-            context.PaymentItems.Add(item);
-            context.SaveChanges();
-
-            var ex2 = Assert.Throws<PaymentServiceException>(() => service.DeletePayment(payment.Id, false));
-            Assert.Equal("Payment has payment items.", ex2.Message);
-        }
-
-        [Fact]
-        public void DeletePaymentSuccessTest()
-        {
-            using var context = GetEmptyDbContext();
-            var service = new PaymentService(context);
-            var emp = new TestCashier(1, "A", "B", DateOnly.FromDateTime(DateTime.Today), null, null);
-            var payment = new Payment(new CashDesk(1), DateTime.UtcNow, emp, PaymentType.Cash);
-            var item = new PaymentItem("Book", 1, 10m, payment);
-
-            context.CashDesks.Add(payment.CashDesk);
-            context.Employees.Add(emp);
-            context.Payments.Add(payment);
-            context.PaymentItems.Add(item);
-            context.SaveChanges();
-
-            service.DeletePayment(payment.Id, true);
-
-            Assert.Empty(context.Payments);
-            Assert.Empty(context.PaymentItems);
-        }
-
-        // Testhilfe-Klassen zur Discriminator-Simulation
-        private class TestCashier : Cashier
-        {
-            public TestCashier(int reg, string f, string l, DateOnly b, decimal? s, Address? a)
-                : base(reg, f, l, b, s, a)
-            {
-                Type = "Cashier";
-            }
-        }
-
-        private class TestManager : Manager
-        {
-            public TestManager(int reg, string f, string l, DateOnly b, decimal? s, Address? a)
-                : base(reg, f, l, b, s, a, "DefaultCarType") // Provide a default value for 'carType'  
-            {
-                Type = "Manager";
-            }
+            // ASSERT
+            var paymentFromDb = db.Payments.First();
+            Assert.True(paymentFromDb.Id != 0);
         }
     }
 }

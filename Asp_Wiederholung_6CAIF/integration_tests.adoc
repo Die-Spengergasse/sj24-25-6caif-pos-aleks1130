@@ -1,0 +1,49 @@
+= Integration Tests
+:source-highlighter: rouge
+:lang: DE
+:hyphens:
+ifndef::env-github[:icons: font]
+ifdef::env-github[]
+:caution-caption: :fire:
+:important-caption: :exclamation:
+:note-caption: :paperclip:
+:tip-caption: :bulb:
+:warning-caption: :warning:
+endif::[]
+
+
+== Erstellen des Projektes SPG_Fachtheorie.Aufgabe3.Test
+
+Gehe in deiner Solution in den Ordner _test_ und erstelle ein Verzeichnis _SPG_Fachtheorie.Aufgabe3.Test_.
+Lege mit _dotnet new xunit_ ein Testprojekt an.
+Kopiere die Klasse _TestWebApplicationFactory.cs_ in dieses Verzeichnis
+Füge das Projekt in Visual Studio mit _Add - Existing Project_ hinzu.
+Lege eine Leere Testklasse _PaymentsControllerTests_ an.
+
+== Testen von GET /api/payments
+
+Es sollen die Routen
+
+* GET /api/payments?cashDesk=1
+* GET /api/payments?dateFrom=2024-05-13
+* GET /api/payments?dateFrom=2024-05-13&cashDesk=1
+
+getestet werden.
+Idee: Lege einen parametrisierten Unittest an mit 3 Parametern: _cashDesk_, _dateFrom_ und _expectedCount_.
+Der letzte Parameter gibt die Anzahl der gelieferten Datensätze an.
+Prüfe im Assert, ob alle gelieferten Daten dem Filter entsprechen.
+Dies kann mit der _All_ Funktion und einem Predicate gemacht werden.
+Beispiel: `payments.All(p => p.CashDesk.Number == cashDesk)`
+
+== Testen von GET /api/payments/{id}
+
+Prüfe die möglichen Statuscodes der Route.
+
+== Testen von PATCH /api/payments/{id}
+
+Teste die 3 möglichen Statuscodes dieser Route mit entsprechenden Daten.
+Siehe in der Methode _ConfirmPayment_ des Services nach, unter welchen Umständen _bad request_ geliefert wird.
+
+== Testen von DELETE /api/payments/{id}
+
+Prüfe die möglichen Statuscodes der Route.
