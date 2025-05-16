@@ -9,11 +9,13 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         // Service provider
+        //...
         builder.Services.AddDbContext<AppointmentContext>(opt =>
         {
             opt.UseSqlite("DataSource=cash.db");
         });
         builder.Services.AddScoped<EmployeeService>();
+        builder.Services.AddScoped<PaymentService>();
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
