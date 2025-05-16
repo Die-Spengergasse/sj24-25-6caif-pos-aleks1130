@@ -9,6 +9,7 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         // Service provider
+        //...
         builder.Services.AddDbContext<AppointmentContext>(opt =>
         {
             opt.UseSqlite("DataSource=cash.db");
